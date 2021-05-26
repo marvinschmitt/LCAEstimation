@@ -6,3 +6,4 @@ build/
 
 *.c
 *.so
+*.pyd
