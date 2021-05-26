@@ -69,7 +69,7 @@ cdef double random_levy(double c, double alpha):
 @cython.nonecheck(False)
 @cython.cdivision(True)
 cdef double levy_lca_trial(double[:] p, double[:] x_acc, double kappa, double beta, double a,
-              double ndt, double alpha, double dt = 0.001, int max_steps = 5000):
+              double ndt, double alpha, double s = 1.0, double dt = 0.001, int max_steps = 5000):
     """
     INPUT:
     res       - array to store (rt, resp)
@@ -93,7 +93,7 @@ cdef double levy_lca_trial(double[:] p, double[:] x_acc, double kappa, double be
     cdef double rt
     cdef double[:] x = x_acc.copy()
     cdef double inhib_total
-    cdef double rhs = pow(dt, 1. / alpha)  # noise-damping factor
+    cdef double rhs = sqrt(dt * s) # noise-damping factor
     cdef double c = 1. / sqrt(2)           # c levy parameter
 
     # Determine boundary of correct (incorrect will be -1)
@@ -147,7 +147,7 @@ cdef double levy_lca_trial(double[:] p, double[:] x_acc, double kappa, double be
 @cython.wraparound(False)
 @cython.nonecheck(False)
 cpdef double[:] generate_levy_lca(int n_obs, double[:] p, double[:] x_acc, double kappa, double beta,
-                 double a, double ndt, double alpha, double dt = 0.001, int max_steps = 5000):
+                 double a, double ndt, double alpha, double s = 1.0, double dt = 0.001, int max_steps = 5000):
     """
     Generate a dataset from the Levy-LCA evidence-accumulator model.
     ----------------
@@ -171,7 +171,7 @@ cpdef double[:] generate_levy_lca(int n_obs, double[:] p, double[:] x_acc, doubl
     cdef int i
     cdef double[:] rts = np.zeros(n_obs, dtype=np.float)
     for i in range(n_obs):
-        rts[i] = levy_lca_trial(p, x_acc, kappa, beta, a, ndt, alpha, dt, max_steps)
+        rts[i] = levy_lca_trial(p, x_acc, kappa, beta, a, ndt, alpha, s, dt, max_steps)
     return rts
 
 
@@ -180,7 +180,7 @@ cpdef double[:] generate_levy_lca(int n_obs, double[:] p, double[:] x_acc, doubl
 @cython.nonecheck(False)
 def batch_generate_levy_lca(int n_obs, double[:, :] p, double[:, :] x_acc,
                             double[:] kappa, double[:] beta, double[:] a, double[:] ndt, double[:] alpha,
-                            double dt = 0.001, int max_steps = 5000):
+                            double s = 1.0, double dt = 0.001, int max_steps = 5000):
     """
     Generate a dataset from the Levy-LCA evidence-accumulator model.
 
@@ -206,5 +206,5 @@ def batch_generate_levy_lca(int n_obs, double[:, :] p, double[:, :] x_acc,
     cdef int n_sim = p.shape[0]
     cdef double[:, :] sim_data = np.zeros((n_sim, n_obs), dtype=np.float)
     for i in range(n_sim):
-        sim_data[i, :] = generate_levy_lca(n_obs, p[i, :], x_acc[i, :], kappa[i], beta[i], a[i], ndt[i], alpha[i], dt, max_steps)
+        sim_data[i, :] = generate_levy_lca(n_obs, p[i, :], x_acc[i, :], kappa[i], beta[i], a[i], ndt[i], alpha[i], s, dt, max_steps)
     return sim_data
